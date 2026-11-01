@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <cmath>
 
 struct platform{
     int platformType;
@@ -37,20 +38,39 @@ int main(){
     Texture danger=LoadTexture("assets/danger.png");
     Texture block=LoadTexture("assets/block.png");
     Texture player=LoadTexture("assets/player.png");
-    int scroll=0;
-    double speed=64;
+    double scroll=0;
+    double speed=4;
+    Vector2 playerY={0,0};
+    double g=98.1*2;
+    bool onGround=false;
     while(!WindowShouldClose()){
         ClearBackground(RAYWHITE);
         double dt=GetFrameTime();
+        if(IsKeyReleased(KEY_W) && onGround){playerY.y=120.0*2;onGround=false;}
+        playerY.y-=g*dt;
+        playerY.x-=playerY.y*dt;
         if(IsKeyDown(KEY_D)){scroll+=speed*dt;}
         if(IsKeyDown(KEY_A)){scroll-=speed*dt;}
-        scroll=std::max(0,scroll);
+        for (const platform& plat : platforms){
+            if(CheckCollisionRecs((Rectangle){8*64,playerY.x,64,64},(Rectangle){(plat.position.x-scroll)*64,plat.position.y*64,64,64})){
+                if((plat.position.y-0.8)*64>playerY.x){
+                playerY.y=0.0;
+                playerY.x=plat.position.y*64-64;
+                onGround=true;
+                }
+                else{
+                    if(IsKeyDown(KEY_D)){scroll-=speed*dt;}
+                    if(IsKeyDown(KEY_A)){scroll+=speed*dt;}
+                }
+            };
+        };
         BeginDrawing();
             for(const platform& plat : platforms){
-                if(plat.position.x-scroll/4>(-1) && plat.position.x-scroll<16){
+                if(plat.position.x-scroll>(-1) && plat.position.x-scroll<16){
                     DrawTexture(plat.platformType==1?danger:block,(plat.position.x-scroll)*64,plat.position.y*64,WHITE);
                 };
             };
+            DrawTexture(player,8*64,float(playerY.x),WHITE);
         EndDrawing();
     }
     UnloadTexture(danger);

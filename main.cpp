@@ -43,20 +43,47 @@ int main(){
     Vector2 playerY={0,0};
     double g=98.1*2;
     bool onGround=false;
+    bool gameOver=false;
     while(!WindowShouldClose()){
         ClearBackground(RAYWHITE);
         double dt=GetFrameTime();
-        if(IsKeyReleased(KEY_W) && onGround){playerY.y=120.0*2;onGround=false;}
-        playerY.y-=g*dt;
-        playerY.x-=playerY.y*dt;
-        if(IsKeyDown(KEY_D)){scroll+=speed*dt;}
-        if(IsKeyDown(KEY_A)){scroll-=speed*dt;}
+        if(!gameOver){
+            if(IsKeyReleased(KEY_W) && onGround){playerY.y=120.0*2;onGround=false;}
+            playerY.y-=g*dt;
+            playerY.x-=playerY.y*dt;
+            if(IsKeyDown(KEY_D)){scroll+=speed*dt;}
+            if(IsKeyDown(KEY_A)){scroll-=speed*dt;}
+        }
+        if (playerY.x>576){
+            gameOver=true;
+        }
         for (const platform& plat : platforms){
-            if(CheckCollisionRecs((Rectangle){8*64,playerY.x,64,64},(Rectangle){(plat.position.x-scroll)*64,plat.position.y*64,64,64})){
+            Rectangle playerRect = {8*64, (float)playerY.x, 64, 64};
+            Rectangle platformRect = {
+                (float)((plat.position.x-scroll)*64),
+                (float)(plat.position.y*64),
+                64,
+                64
+            };
+            if (plat.platformType == 1) {
+                constexpr float dangerInset = 1.0f;
+                Rectangle dangerRect = {
+                    platformRect.x + dangerInset,
+                    platformRect.y + dangerInset,
+                    platformRect.width - dangerInset * 2,
+                    platformRect.height - dangerInset * 2
+                };
+                if (CheckCollisionRecs(playerRect, dangerRect)) {
+                    gameOver = true;
+                    break;
+                }
+                continue;
+            }
+            if(CheckCollisionRecs(playerRect, platformRect)){
                 if((plat.position.y-0.8)*64>playerY.x){
-                playerY.y=0.0;
-                playerY.x=plat.position.y*64-64;
-                onGround=true;
+                    playerY.y=0.0;
+                    playerY.x=plat.position.y*64-64;
+                    onGround=true;
                 }
                 else{
                     if(IsKeyDown(KEY_D)){scroll-=speed*dt;}
@@ -71,6 +98,10 @@ int main(){
                 };
             };
             DrawTexture(player,8*64,float(playerY.x),WHITE);
+            if (gameOver) {
+                DrawRectangle(0, 0, 1024, 576, Fade(BLACK, 0.65f));
+                DrawText("YOU LOSE", 410, 250, 40, RED);
+            }
         EndDrawing();
     }
     UnloadTexture(danger);

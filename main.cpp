@@ -35,21 +35,31 @@ void openFileAndRead(const std::string& filename) {
     }
     levelFile.close();
 }
+    double scroll;
+    Vector2 playerY;
+    bool onGround;
+    bool gameOver;
+    bool gameWin;
+void reset(){
+    platforms.clear();
+    scroll=0;
+    playerY={0,0};
+    onGround=false;
+    gameOver=false;
+    gameWin=false;
+}
 int main(){
-    openFileAndRead("level.txt");
+    reset();
+    openFileAndRead("level1.txt");
     InitWindow(1024,576,"Platformer");
     SetTargetFPS(60);
     Texture danger=LoadTexture("assets/danger.png");
     Texture block=LoadTexture("assets/block.png");
     Texture player=LoadTexture("assets/player.png");
     Texture end=LoadTexture("assets/end.png");
-    double scroll=0;
     double speed=4;
-    Vector2 playerY={0,0};
     double g=98.1*2;
-    bool onGround=false;
-    bool gameOver=false;
-    bool gameWin=false;
+    Vector2 levels={1,2};
     while(!WindowShouldClose()){
         ClearBackground(RAYWHITE);
         double dt=GetFrameTime();
@@ -114,10 +124,24 @@ int main(){
             if (gameOver) {
                 DrawRectangle(0, 0, 1024, 576, Fade(BLACK, 0.65f));
                 DrawText("YOU LOSE", 410, 250, 40, RED);
+                DrawText("Press SPACE to continue", 300, 300, 20, WHITE);
+                if (IsKeyPressed(KEY_SPACE)) {
+                    reset();
+                    openFileAndRead("level" + std::to_string(int(levels.x)) + ".txt");
+                }
             }
-            if (gameWin) {
+            if (gameWin && levels.x == levels.y) {
                 DrawRectangle(0, 0, 1024, 576, Fade(BLACK, 0.65f));
                 DrawText("YOU WIN", 410, 250, 40, GREEN);
+            }else if (gameWin && levels.x < levels.y) {
+                DrawRectangle(0, 0, 1024, 576, Fade(BLACK, 0.65f));
+                DrawText("LEVEL COMPLETE", 350, 250, 40, GREEN);
+                DrawText("Press SPACE to continue", 300, 300, 20, WHITE);
+                if (IsKeyPressed(KEY_SPACE)) {
+                    levels.x++;
+                    reset();
+                    openFileAndRead("level" + std::to_string(int(levels.x)) + ".txt");
+                }
             }
         EndDrawing();
     }
